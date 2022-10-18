@@ -1,0 +1,25 @@
+11-24 16:07:26 seed: 0
+11-24 16:07:26 label_type: 3_25.2
+11-24 16:07:26 model_name: CADRN
+11-24 16:07:26 pretrained_model_name: densenet121
+11-24 16:07:26 data_name: DONG
+11-24 16:07:26 data_dir: ./label/DONG_label
+11-24 16:07:26 normlizetype: 0-1
+11-24 16:07:26 processing_type: custom
+11-24 16:07:26 cuda_device: 0
+11-24 16:07:26 checkpoint_dir: ./checkpoint
+11-24 16:07:26 pretrained: False
+11-24 16:07:26 batch_size: 2
+11-24 16:07:26 num_workers: 0
+11-24 16:07:26 opt: sgd
+11-24 16:07:26 lr: 0.001
+11-24 16:07:26 momentum: 0.9
+11-24 16:07:26 weight_decay: 1e-05
+11-24 16:07:26 lr_scheduler: stepLR
+11-24 16:07:26 gamma: 0.9
+11-24 16:07:26 steps: 10
+11-24 16:07:26 max_epoch: 50
+11-24 16:07:26 print_step: 100
+11-24 16:07:26 using 1 gpus
+11-24 16:07:28 ----------Epoch 0/49----------
+11-24 16:07:28 current lr: [0.001]
