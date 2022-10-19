@@ -4,17 +4,17 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 
-transform = transforms.Compose(
-        [transforms.Resize([64, 64]),
-         transforms.ToTensor(),
-         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])       # jiancha huachulaide tupian
+# transform = transforms.Compose(
+#         [transforms.Resize([64, 64]),
+#          transforms.ToTensor(),
+#          transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])       # jiancha huachulaide tupian
 
 
-class MyDataSet(Dataset):
+class MyDataSet_GCN(Dataset):
     
-    def __init__(self, dataset_type, label_type, transform=transform):
+    def __init__(self, dataset_type, label_type):
         dataset_path = ''
-        self.transform = transform
+        # self.transform = transform
         self.sample_list = list()
         self.dataset_type = dataset_type
         f = open(dataset_path + self.dataset_type + '/'+label_type+'.txt')
@@ -27,10 +27,12 @@ class MyDataSet(Dataset):
         item = self.sample_list[index]
         # img = Image.open(item.split(' ', 1)[0]).convert('RGB')                  # 标签文件使用的‘ ’做分隔符；
         img = Image.open(item.split(' ', 1)[0])              # 标签文件使用的‘ ’做分隔符；
-        if self.transform is not None:
-            img = self.transform(img)
+        # if self.transform is not None:
+        #     img = self.transform(img)
+        image = np.array(img)
+        image = image.reshape((1,64, 64))
         label = int(item.split(' ')[-1])                # -1是标签
-        return img, label
+        return image, label
 
     def __len__(self):
         return len(self.sample_list)
@@ -53,12 +55,13 @@ if __name__ == '__main__':
     # print(type(label))
     # print(label.shape)
 
-    ds = MyDataSet('D:\IFD_BasicTask\label\CWRU_GCN_lable', 'array_0_cwru_train')
+    ds = MyDataSet_GCN('D:\IFD_BasicTask\label\CWRU_GCN_lable', 'array_0_cwru_train')
     print('样本数：', ds.__len__())
     img, gt = ds.__getitem__(4)
     # print('img 类型：', type(img))
     print('img 标签：', gt)
-    print('img 维度：', img.size())
+
+    # print('img 维度：', img.size())
     # imshow(img)
     loader = DataLoader(ds, batch_size=16, shuffle=False, num_workers=0)
     for data in loader:
