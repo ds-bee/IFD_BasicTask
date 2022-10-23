@@ -4,17 +4,18 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 
-# transform = transforms.Compose(
-#         [transforms.Resize([64, 64]),
-#          transforms.ToTensor(),
-#          transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])       # jiancha huachulaide tupian
+transform = transforms.Compose(
+        [transforms.Resize([64, 64]),
+         transforms.ToTensor(),
+         transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])       # jiancha huachulaide tupian
 
 
 class MyDataSet_GCN(Dataset):
     
-    def __init__(self, dataset_type, label_type):
+    def __init__(self, dataset_type, label_type, transform=transform):
         dataset_path = ''
-        # self.transform = transform
+        self.transform = transform
         self.sample_list = list()
         self.dataset_type = dataset_type
         f = open(dataset_path + self.dataset_type + '/'+label_type+'.txt')
@@ -27,12 +28,12 @@ class MyDataSet_GCN(Dataset):
         item = self.sample_list[index]
         # img = Image.open(item.split(' ', 1)[0]).convert('RGB')                  # 标签文件使用的‘ ’做分隔符；
         img = Image.open(item.split(' ', 1)[0])              # 标签文件使用的‘ ’做分隔符；
-        # if self.transform is not None:
-        #     img = self.transform(img)
-        image = np.array(img)
-        image = image.reshape((1,64, 64))
+        if self.transform is not None:
+            img = self.transform(img)
+        # img = np.array(img)
+        # img = image.reshape((1,64, 64))
         label = int(item.split(' ')[-1])                # -1是标签
-        return image, label
+        return img, label
 
     def __len__(self):
         return len(self.sample_list)

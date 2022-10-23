@@ -8,7 +8,8 @@ device = torch.device('cuda' if torch.cuda.is_available else 'cpu')
 
 
 class WtCnn(nn.Module):
-    def __init__(self, num_class=5):
+    # def __init__(self, num_class=5):
+    def __init__(self, num_class=10):
         super(WtCnn, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 16, 3, stride=1, padding=1),
@@ -40,6 +41,7 @@ class WtCnn(nn.Module):
             nn.Sigmoid(),
             nn.Linear(84, num_class)
         )
+
 
     def forward(self, img):
         # print(' ', img.shape[0])

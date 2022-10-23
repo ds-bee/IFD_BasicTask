@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train')
     # basic parameters
     parser.add_argument('--seed', type=int, default=8, help='seed')
-    parser.add_argument('--model_name', type=str, default='Vit', help='the name of the model_name')
+    parser.add_argument('--model_name', type=str, default='GCN', help='the name of the model_name')
     parser.add_argument('--data_name', type=str, default='CWRU', help='the name of the data')  # 数据预处理方式(ra opt)
     parser.add_argument('--data_dir', type=str, default="./label/CWRU_label",
                         help='the directory of the data')

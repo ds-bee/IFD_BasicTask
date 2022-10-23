@@ -3,13 +3,12 @@ import numpy as np
 import torch
 from PIL import Image
 import matplotlib.pyplot as plt
-
+from torchvision import models
 from torchvision import transforms
 import cv2
 
 # from utils import GradCAM, show_cam_on_image, center_crop_img
-import models
-from data_GCN.CWRUPath import dataGCN_load
+
 
 activations = []
 gradients = []
@@ -80,48 +79,29 @@ def show_cam_on_image(img: np.ndarray,
     cam = cam / np.max(cam)
     return np.uint8(255 * cam)
 
-transform = transforms.Compose(
-        [transforms.Resize([64, 64]),
-         transforms.ToTensor(),
-         transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
 
-if __name__ == '__main__':
-    model = models.GCNold(1024)
-    model.load_state_dict(torch.load(
-        'D:\IFD_BasicTask\checkpoint\GCN_CWRU_RGCN_1021-094514\\49-3.8213-best_model.pth'))
-    model.eval()
-
-    # model = models.mobilenet_v3_large(pretrained=True)
+def main():
+    model = models.mobilenet_v3_large(pretrained=True)
     # 获取最分类层之前的
-    target_layers = [model.conv3]
+    target_layers = [model.features[-1]]
 
-    img_path = "D:\IFD_BasicTask\dataset\CWRU_GCN\outer_54_imgs\\array_426.jpg"
+    data_transform = transforms.Compose([transforms.ToTensor(),
+                                         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+
+    img_path = r"C:\Users\hyq\Pictures\Saved Pictures\\dog.jpg"
     assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
-    img = Image.open(img_path)
+    img = Image.open(img_path).convert('RGB')
     img = np.array(img, dtype=np.uint8)
-    # img = Image.open(item.split(' ', 1)[0])  # 标签文件使用的‘ ’做分隔符；
-    img = torch.from_numpy(img)
     # img = cv2.reszie()
     print(img.shape)
-    data = dataGCN_load(img,8,"Node")
-
-    data = data[0].to(torch.device("cpu"))
-
-    # data_transform = transforms.Compose([transforms.ToTensor(),
-    #                                      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-
-
-    # img = Image.open(img_path).convert('RGB')
-
     # [C, H, W]
-    # img_tensor = data_transform(img)
+    img_tensor = data_transform(img)
     # expand batch dimension
     # [C, H, W] -> [N, C, H, W]
-    # input_tensor = torch.unsqueeze(img, dim=0)
+    input_tensor = torch.unsqueeze(img_tensor, dim=0)
     # target_category = 3
 
-    target_category = 8  # pug, pug-dog
+    target_category = 254  # pug, pug-dog
     for target_layer in target_layers:
         handles.append(
             target_layer.register_forward_hook(
@@ -143,28 +123,25 @@ if __name__ == '__main__':
 
     # forward
     model.eval()
-    out = model(data)
-    # pred = output.argmax(dim=1)
+    output = model(input_tensor)
     #  # 正向传播得到网络输出logits(未经过softmax)
 
-    # target_category = [target_category] * input_tensor.size(0)  # 将结果格式话
-    target_category = [target_category] * data.size(0)  # 将结果格式话
+    target_category = [target_category] * input_tensor.size(0)  # 将结果格式话
     model.zero_grad()  # 梯度归零
-    loss = get_loss(out, target_category)  # 计算损失
+    loss = get_loss(output, target_category)  # 计算损失
     loss.backward(retain_graph=True)  # 反向传播
 
     # print(handles) 这个时候就有了参数了
-    print(handles)
 
     activations_list = [a.cpu().data.numpy()
                         for a in activations]
     grads_list = [g.cpu().data.numpy()
                   for g in gradients]
 
-    target_size = data.size(-1), data.size(-2)
+    target_size = input_tensor.size(-1), input_tensor.size(-2)
     cam_per_target_layer = []
     for layer_activations, layer_grads in zip(activations_list, grads_list):
-        weights = np.mean(layer_grads, axis=(0, 1), keepdims=True)  # 使用均值作为权重
+        weights = np.mean(layer_grads, axis=(2, 3), keepdims=True)  # 使用均值作为权重
         # print(weights)
         weighted_activations = weights * layer_activations  # 对应相乘在相加
         cam = weighted_activations.sum(axis=1)
@@ -174,7 +151,6 @@ if __name__ == '__main__':
 
     grayscale_cam = aggregate_multi_layers(cam_per_target_layer)  # 将多层进行合并
     grayscale_cam = grayscale_cam[0]
-    img = img.numpy()
     visualization = show_cam_on_image(img.astype(dtype=np.float32) / 255.,
                                       grayscale_cam,
                                       use_rgb=True)
@@ -193,5 +169,5 @@ if __name__ == '__main__':
     # plt.imsave("./cam.png",visualization)
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()

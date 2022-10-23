@@ -7,6 +7,7 @@ from torch import nn
 from torch import optim
 from data_GCN.CWRUPath import dataGCN_load
 import data_GCN.CWRUPath
+from torch_geometric.data import DataLoader
 from utils.plot_diagram import curve_plot
 import models
 
@@ -56,10 +57,10 @@ class train_utils(object):
             Dataset = getattr(datasets, args.data_name)
         else:
             raise Exception("processing type not implement")
-        print(Dataset)
+        # print(Dataset)
         self.datasets = {}
         self.datasets['train'], self.datasets['val'] = Dataset(args.data_dir, args.normlizetype).data_prepare()
-        self.dataloaders = {x: torch.utils.data.DataLoader(self.datasets[x], batch_size=args.batch_size,
+        self.dataloaders = {x: DataLoader(self.datasets[x], batch_size=args.batch_size,
                                                            shuffle=(True if x == 'train' else False),
                                                            num_workers=args.num_workers,
                                                            pin_memory=(True if self.device == 'cuda' else False))
@@ -147,21 +148,21 @@ class train_utils(object):
                 else:
                     self.model.eval()
                     # pass
-                for batch_idx, (inputs, labels) in enumerate(self.dataloaders[phase]):
-                    inputs = dataGCN_load(inputs, labels, "Node")
-                    inputs = inputs.to(self.device)
+                sample_num = 0
+                for data in self.dataloaders[phase]:
+                    inputs = data[0].to(self.device)
 
-                    labels = labels.to(self.device)
+                    labels = inputs.y
+                    bacth_num = inputs.num_nodes
+                    sample_num += len(labels)
                     # Do the learning process, in val, we do not care about the gradient for relaxing
                     with torch.set_grad_enabled(phase == 'train'):
                         # forward
                         logits = self.model(inputs)
-                        cls_loss = self.criterion(logits, labels)
+                        loss = self.criterion(logits, labels)
                         pred = logits.argmax(dim=1)
                         correct = torch.eq(pred, labels).float().sum().item()
-                        iteration = epoch * self.loss_p + (batch_idx + 1)
-                        loss = cls_loss
-                        loss_temp = loss.item() * inputs[0].size(0)
+                        loss_temp = loss.item() * bacth_num
                         epoch_loss += loss_temp
                         epoch_acc += correct
                         # Calculate the training information
@@ -182,11 +183,10 @@ class train_utils(object):
                                 step_start = temp_time
                                 batch_time = train_time / args.print_step if step != 0 else train_time
                                 sample_per_sec = 1.0*batch_count/train_time
-                                logging.info('Epoch: {} [{}/{}], Train Loss: {:.4f} Train Acc: {:.4f},'
+                                logging.info('Epoch: {}, Train Loss: {:.4f} Train Acc: {:.4f},'
                                              '{:.1f} examples/sec {:.2f} sec/batch'.format(
-                                              epoch, batch_idx*len(inputs), len(self.dataloaders[phase].dataset),
-                                              batch_loss, batch_acc, sample_per_sec, batch_time
-                                             ))
+                                    epoch, batch_loss, batch_acc, sample_per_sec, batch_time
+                                ))
                                 batch_acc = 0
                                 batch_loss = 0.0
                                 batch_count = 0
@@ -195,7 +195,7 @@ class train_utils(object):
                 epoch_loss = epoch_loss / len(self.dataloaders[phase].dataset)
                 epoch_acc = epoch_acc / len(self.dataloaders[phase].dataset)
                 logging.info('Epoch: {} {}-Loss: {:.4f} {}-Acc: {:.4f}, Cost {:.4f} sec'.format(
-                    epoch, phase, epoch_loss, phase, epoch_acc, time.time()-epoch_start
+                    epoch, phase, epoch_loss/4, phase, epoch_acc/4, time.time()-epoch_start
                 ))
                 # save the model_name
                 if phase == 'val':

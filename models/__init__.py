@@ -19,6 +19,8 @@ import models.Sae2d as Sae2d
 from models.MLP import MLP
 from models.DAN_custom import DANNet_test, DANNet
 from models.WTCNN import WtCnn
+from models.GCN import GCN
+from models.GCNold import GCNold
 from models.DWWCDRN import DwwcDrn
 from models.pretrained_torch_model import PretrainedTorchModel
 # from models.Vit import Vit

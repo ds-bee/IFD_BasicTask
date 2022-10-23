@@ -5,6 +5,8 @@ import logging, os, time, warnings, torch, math, random
 import numpy as np
 from torch import nn
 from torch import optim
+
+import data_GCN
 from utils.plot_diagram import curve_plot
 import models
 
@@ -75,7 +77,9 @@ class train_utils(object):
                                                           dropout=0.1,
                                                           emb_dropout=0.1)
         else:
-            self.model = getattr(models, args.model_name)(num_class=10)
+            #TODO 修改输出尝试1024
+            self.model = getattr(models, args.model_name)(feature=1024,out_channel=10)
+
         # Define the device
         if self.device_count > 1:
             self.model = torch.nn.DataParallel(self.model)
@@ -144,6 +148,7 @@ class train_utils(object):
                     self.model.eval()
                     # pass
                 for batch_idx, (inputs, labels) in enumerate(self.dataloaders[phase]):
+                    inputs = data_GCN.CWRUPath.data_load(inputs, labels, "Node")
                     inputs = inputs.to(self.device)
                     labels = labels.to(self.device)
                     # Do the learning process, in val, we do not care about the gradient for relaxing
